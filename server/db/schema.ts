@@ -22,7 +22,7 @@ export const users = pgTable("users", {
 });
 
 export const games = pgTable(
-  "products",
+  "games",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 255 }).notNull(),
