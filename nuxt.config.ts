@@ -6,11 +6,31 @@ export default defineNuxtConfig({
   },
   compatibilityDate: "2026-03-01",
   css: ["~/assets/css/main.css"],
-  modules: ["@nuxt/ui", "@pinia/nuxt", "@vueuse/nuxt"],
+  modules: ["@nuxt/ui", "@nuxthub/core", "@pinia/nuxt", "@vueuse/nuxt"],
   vite: {
-    plugins: [
-      // @ts-expect-error
-      tailwindcss(),
-    ],
+    plugins: [tailwindcss()],
+  },
+  runtimeConfig: {
+    jwt: {
+      access: {
+        secret: "",
+        expiresIn: "",
+      },
+      refresh: {
+        secret: "",
+        expiresIn: "",
+      },
+    },
+  },
+  hub: {
+    db: {
+      dialect: "postgresql",
+      driver: process.env.DATABASE_DRIVER as "postgres-js" | "neon-http",
+    },
+  },
+  nitro: {
+    experimental: {
+      tasks: true,
+    },
   },
 });
