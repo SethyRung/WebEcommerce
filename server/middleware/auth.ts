@@ -1,14 +1,9 @@
-import type { ResponseCode } from "#shared/types";
-import { createResponse } from "#server/utils/response";
-import { verifyAccessToken, type AccessTokenPayload } from "#server/utils/auth";
 import type { H3Event } from "h3";
 
-interface PublicRoute {
+const PUBLIC_ROUTES: {
   path: string;
   methods: string[];
-}
-
-const PUBLIC_ROUTES: PublicRoute[] = [
+}[] = [
   { path: "/api/auth/login", methods: ["POST"] },
   { path: "/api/auth/register", methods: ["POST"] },
   { path: "/api/auth/refresh", methods: ["POST"] },
@@ -40,27 +35,25 @@ export default defineEventHandler((event: H3Event) => {
     return;
   }
 
-  // Check if route is public
   if (findPublicRoute(url, event.method)) {
     return;
   }
 
-  // Extract and verify Bearer token
-  const authHeader = getHeader(event, "authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const token = getCookie(event, CookieName.AccessToken);
+
+  if (!token) {
     return createResponse(
-      { code: "Unauthorized" as ResponseCode, message: "Missing authorization header" },
+      { code: ApiResponseCode.Unauthorized, message: "Missing authorization token" },
       null,
     );
   }
 
   const config = useRuntimeConfig();
-  const token = authHeader.substring(7);
-  const payload = verifyAccessToken(token, config.jwt.access);
+  const payload = verifyToken<AccessTokenPayload>(token, config.jwt.access);
 
   if (!payload) {
     return createResponse(
-      { code: "Unauthorized" as ResponseCode, message: "Invalid or expired token" },
+      { code: ApiResponseCode.Unauthorized, message: "Invalid or expired token" },
       null,
     );
   }
