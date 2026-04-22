@@ -9,6 +9,9 @@ export default defineNuxtConfig({
   modules: ["@nuxt/ui", "@nuxthub/core", "@pinia/nuxt", "@vueuse/nuxt"],
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: ["zod"],
+    },
   },
   runtimeConfig: {
     jwt: {
