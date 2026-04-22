@@ -14,25 +14,13 @@ function isPublicRoute(path: string, method: string | undefined): boolean {
   );
 }
 
-function extractToken(event: H3Event): string | undefined {
-  const cookie = getCookie(event, CookieName.AccessToken);
-  if (cookie) return cookie;
-
-  const auth = getHeader(event, "authorization");
-  if (auth?.startsWith("Bearer ")) {
-    return auth.slice(7);
-  }
-
-  return undefined;
-}
-
 export default defineEventHandler((event: H3Event) => {
   const url = getRequestURL(event).pathname;
 
   if (!url.startsWith("/api/") || url.startsWith("/api/_") || isPublicRoute(url, event.method))
     return;
 
-  const token = extractToken(event);
+  const token = getCookie(event, CookieName.AccessToken);
 
   if (!token) {
     return createResponse(
