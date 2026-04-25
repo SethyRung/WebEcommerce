@@ -1,20 +1,4 @@
-import type { H3Event } from "h3";
-
-const PUBLIC_ROUTES: { pattern: RegExp; methods: string[] }[] = [
-  { pattern: /^\/api\/auth\/login$/, methods: ["POST"] },
-  { pattern: /^\/api\/auth\/register$/, methods: ["POST"] },
-  { pattern: /^\/api\/auth\/refresh$/, methods: ["POST"] },
-  { pattern: /^\/api\/games$/, methods: ["GET"] },
-  { pattern: /^\/api\/games\/[^/]+$/, methods: ["GET"] },
-];
-
-function isPublicRoute(path: string, method: string | undefined): boolean {
-  return PUBLIC_ROUTES.some(
-    (route) => route.pattern.test(path) && (!method || route.methods.includes(method)),
-  );
-}
-
-export default defineEventHandler((event: H3Event) => {
+export default defineEventHandler((event) => {
   const url = getRequestURL(event).pathname;
 
   if (!url.startsWith("/api/") || url.startsWith("/api/_") || isPublicRoute(url, event.method))

@@ -6,6 +6,21 @@ export interface Payload {
   [key: string]: any;
 }
 
+const PUBLIC_ROUTES: { pattern: RegExp; methods: string[] }[] = [
+  { pattern: /^\/api\/auth\/login$/, methods: ["POST"] },
+  { pattern: /^\/api\/auth\/register$/, methods: ["POST"] },
+  { pattern: /^\/api\/auth\/refresh$/, methods: ["POST"] },
+  { pattern: /^\/api\/games$/, methods: ["GET"] },
+  { pattern: /^\/api\/games\/[^/]+$/, methods: ["GET"] },
+];
+
+export function isPublicRoute(path: string, method: string | undefined): boolean {
+  return PUBLIC_ROUTES.some(
+    (route) =>
+      route.pattern.test(path) && (!method || route.methods.includes(method.toUpperCase())),
+  );
+}
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
