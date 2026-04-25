@@ -1,55 +1,54 @@
+import type { FetchResponse } from "ofetch";
+
 let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<FetchResponse<ApiResponse<unknown>>> | null = null;
 
 export const useApiFetch = createUseFetch((options) => {
   const config = useRuntimeConfig();
-  const REFRESH_TOKEN_ENDPOINT = "/api/auth/refresh";
+  const event = useRequestEvent();
 
   return {
     baseURL: config.public.baseURL,
     timeout: 10000,
-    server: false,
     onResponse: async (context) => {
       if (!context.response.ok) return;
 
       const data = context.response._data as ApiResponse<unknown>;
       if (data?.status?.code !== ApiResponseCode.Unauthorized) return;
 
-      if (isRefreshing && refreshPromise) {
-        const success = await refreshPromise;
-        if (!success) return;
-
-        const repeatRes = await $fetch.raw(context.request, {
-          ...context.options,
-          onResponse: undefined,
-          method: context.options.method as any,
-        });
-        context.response._data = repeatRes._data;
-        return;
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = $fetch
+          .raw("/api/auth/refresh", {
+            baseURL: config.public.baseURL,
+            method: "POST",
+            timeout: 10000,
+            headers: { cookie: getCookieHeader(context.options) },
+          })
+          .finally(() => {
+            isRefreshing = false;
+            refreshPromise = null;
+          });
       }
 
-      isRefreshing = true;
-      refreshPromise = $fetch
-        .raw(REFRESH_TOKEN_ENDPOINT, {
-          baseURL: config.public.baseURL,
-          method: "POST",
-          timeout: 10000,
-        })
-        .then((res) => res._data?.status?.code === ApiResponseCode.Success)
-        .catch(() => false);
+      const refreshRes = await refreshPromise;
+      if (!refreshRes) return;
 
-      const success = await refreshPromise;
-      isRefreshing = false;
-      refreshPromise = null;
+      if (refreshRes._data?.status?.code !== ApiResponseCode.Success) return;
 
-      if (!success) return;
+      forwardCookies(event, refreshRes);
 
-      const repeatRes = await $fetch.raw(context.request, {
+      const retryRes = await $fetch.raw(context.request, {
         ...context.options,
         onResponse: undefined,
         method: context.options.method as any,
+        headers: {
+          ...context.options.headers,
+          cookie: getCookieHeader(refreshRes),
+        },
       });
-      context.response._data = repeatRes._data;
+
+      context.response = retryRes;
     },
     ...options,
   };
